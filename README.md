@@ -61,9 +61,49 @@ The configuration is stored in a JSON file located at `~/.config/ilias/config.js
 }
 ```
 
-## Flake for NixOS
+## Nix Integration
 
-There is a flake available for NixOS users. You can add it to your `flake.nix` like this:
+This repository provides a nix Flake. You can use it either as a standard package or via the provided Home Manager module to manage your configuration declaratively.
+
+### 1. Using the Home Manager Module (Recommended)
+
+This is the cleanest way to use iliasScraper. It handles both the package installation and the creation of `~/.config/ilias/config.json`.
+
+In your `flake.nix`:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    iliasScraper.url = "github:FelixSmtt/iliasScraper";
+  };
+
+  outputs = { iliasScraper, ... }: {
+    # In your Home Manager configuration:
+    homeConfigurations."user" = home-manager.lib.homeManagerConfiguration {
+      modules = [
+        iliasScraper.homeManagerModules.default
+        {
+          programs.ilias = {
+            enable = true;
+            settings = {
+              path = "/home/user/Documents/University";
+              courses = [
+                { name = "Linear Algebra"; id = 1234567; }
+                { name = "Computer Science 1"; id = 7654321; }
+              ];
+            };
+          };
+        }
+      ];
+    };
+  };
+}
+```
+
+### 2. Adding to System Packages
+
+If you just want the binary without Nix-managed configuration:
 
 ```nix
 {
@@ -83,9 +123,9 @@ There is a flake available for NixOS users. You can add it to your `flake.nix` l
       modules = [
         ./configuration.nix
         {
-            environment.systemPackages = [
-                inputs.iliasScraper.packages.${pkgs.system}.default
-            ];
+          environment.systemPackages = [
+              inputs.iliasScraper.packages.${pkgs.system}.default
+          ];
         }
       ];
     };
